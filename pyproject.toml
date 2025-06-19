@@ -1,0 +1,24 @@
+[project]
+name = "gravitybench"
+version = "0.1.0"
+description = "GravityBench: A benchmark for evaluating AI agents on gravitational physics discovery"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.51.0",
+    "astropy>=7.0.2",
+    "colorama>=0.4.6",
+    "datasets>=3.6.0",
+    "ipykernel>=6.29.5",
+    "matplotlib>=3.10.3",
+    "numpy>=2.2.5",
+    "openai>=1.79.0",
+    "pandas>=2.2.3",
+    "python-dotenv>=1.1.0",
+    "rebound>=4.4.6",
+    "scikit-learn>=1.6.1",
+    "scipy>=1.15.2",
+    "seaborn>=0.13.2",
+    "statsmodels>=0.14.4",
+    "tqdm",
+]

@@ -1,0 +1,28 @@
+name: gravitybench
+channels:
+  - conda-forge
+  - nodefaults
+platforms:
+  - linux-64
+  - osx-arm64
+
+dependencies:
+  - python >=3.12
+  - numpy >=2.2.5
+  - scipy >=1.15.2
+  - pandas >=2.2.3
+  - scikit-learn >=1.6.1
+  - matplotlib >=3.10.3
+  - astropy >=7.0.2
+  - statsmodels >=0.14.4
+  - rebound >=4.4.6
+  - ipykernel >=6.29.5
+  - python-dotenv >=1.1.0
+  - colorama >=0.4.6
+  - tqdm
+  - seaborn >=0.13.2
+  - pip
+  - pip:
+    - anthropic>=0.51.0
+    - openai>=1.79.0
+    - datasets>=3.6.0

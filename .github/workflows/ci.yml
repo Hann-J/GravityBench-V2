@@ -1,0 +1,292 @@
+name: CI - Test Installation Methods
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  test-uv:
+    name: Test uv installation
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.12"]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+      with:
+        version: "latest"
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      run: uv python install ${{ matrix.python-version }}
+    
+    - name: Install dependencies with uv
+      run: |
+        uv sync --python ${{ matrix.python-version }}
+    
+    - name: Run tests
+      run: |
+        uv run python -m unittest discover -s tests -v
+    
+    - name: Test basic scenario import (no API required)
+      run: |
+        uv run python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from scripts.scenarios_config import get_all_scenarios
+        scenarios = get_all_scenarios()
+        print(f'[OK] Successfully loaded {len(scenarios)} scenarios')
+        assert len(scenarios) > 0, 'No scenarios found'
+        "
+    
+    - name: Test basic simulation (no API required)
+      run: |
+        uv run python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from scripts.scenarios_config import get_scenario
+        scenario = get_scenario('period', '9.6 M, 3.1 M')
+        print('[OK] Successfully created scenario:', scenario)
+        csv_path = f'scenarios/sims/{scenario.binary_sim.filename}.csv'
+        import os
+        assert os.path.exists(csv_path), f'CSV file {csv_path} was not created'
+        print('[OK] CSV simulation file created successfully')
+        "
+
+  test-conda:
+    name: Test conda installation  
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest] # windows conda does not support rebound
+        python-version: ["3.12"]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Miniforge3
+      uses: conda-incubator/setup-miniconda@v3
+      with:
+        miniforge-variant: Miniforge3
+        miniforge-version: latest
+        use-mamba: true
+        python-version: ${{ matrix.python-version }}
+        activate-environment: gravitybench
+        environment-file: environment.yml
+    
+    - name: Conda info
+      shell: bash -l {0}
+      run: |
+        conda info
+        conda list
+    
+    - name: Run tests
+      shell: bash -l {0}
+      run: |
+        python -m unittest discover -s tests -v
+    
+    - name: Test basic scenario import (no API required)
+      shell: bash -l {0}
+      run: |
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from scripts.scenarios_config import get_all_scenarios
+        scenarios = get_all_scenarios()
+        print(f'[OK] Successfully loaded {len(scenarios)} scenarios')
+        assert len(scenarios) > 0, 'No scenarios found'
+        "
+    
+    - name: Test basic simulation (no API required)
+      shell: bash -l {0}
+      run: |
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from scripts.scenarios_config import get_scenario
+        scenario = get_scenario('period', '9.6 M, 3.1 M')
+        print('[OK] Successfully created scenario:', scenario)
+        csv_path = f'scenarios/sims/{scenario.binary_sim.filename}.csv'
+        import os
+        assert os.path.exists(csv_path), f'CSV file {csv_path} was not created'
+        print('[OK] CSV simulation file created successfully')
+        "
+
+  test-pip:
+    name: Test pip installation
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.12"]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Create virtual environment
+      run: |
+        python -m venv .venv
+    
+    - name: Activate venv and install dependencies (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        source .venv/bin/activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Activate venv and install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        .venv\Scripts\activate
+        pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run tests (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        source .venv/bin/activate
+        python -m unittest discover -s tests -v
+    
+    - name: Run tests (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        .venv\Scripts\activate
+        python -m unittest discover -s tests -v
+    
+    - name: Test basic scenario import (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        source .venv/bin/activate
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from scripts.scenarios_config import get_all_scenarios
+        scenarios = get_all_scenarios()
+        print(f'[OK] Successfully loaded {len(scenarios)} scenarios')
+        assert len(scenarios) > 0, 'No scenarios found'
+        "
+    
+    - name: Test basic scenario import (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        .venv\Scripts\activate
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from scripts.scenarios_config import get_all_scenarios
+        scenarios = get_all_scenarios()
+        print(f'[OK] Successfully loaded {len(scenarios)} scenarios')
+        assert len(scenarios) > 0, 'No scenarios found'
+        "
+    
+    - name: Test basic simulation (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        source .venv/bin/activate
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from scripts.scenarios_config import get_scenario
+        scenario = get_scenario('period', '9.6 M, 3.1 M')
+        print('[OK] Successfully created scenario:', scenario)
+        csv_path = f'scenarios/sims/{scenario.binary_sim.filename}.csv'
+        import os
+        assert os.path.exists(csv_path), f'CSV file {csv_path} was not created'
+        print('[OK] CSV simulation file created successfully')
+        "
+    
+    - name: Test basic simulation (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        .venv\Scripts\activate
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from scripts.scenarios_config import get_scenario
+        scenario = get_scenario('period', '9.6 M, 3.1 M')
+        print('[OK] Successfully created scenario:', scenario)
+        csv_path = f'scenarios/sims/{scenario.binary_sim.filename}.csv'
+        import os
+        assert os.path.exists(csv_path), f'CSV file {csv_path} was not created'
+        print('[OK] CSV simulation file created successfully')
+        "
+
+  test-integration:
+    name: Integration tests (no API keys required)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+    
+    - name: Install dependencies
+      run: uv sync
+    
+    - name: Test that agent tools import correctly
+      run: |
+        uv run python -c "
+        import sys
+        sys.path.insert(0, '.')
+        from agents.tools.observe_tool import observe_tool, execute_observe_tool
+        from agents.tools.python_repl_tool import python_repl_tool, execute_python_repl
+        from agents.tools.submit_answer_tool import submit_answer_tool, execute_submit_answer
+        print('[OK] All agent tools imported successfully')
+        "
+    
+    - name: Test that config files are valid
+      run: |
+        uv run python -c "
+        import json
+        with open('config.json', 'r') as f:
+            config = json.load(f)
+        print('[OK] config.json is valid JSON')
+        assert 'TEMPERATURE' in config
+        assert 'MAX_ATTEMPTS' in config
+        print('[OK] config.json has required fields')
+        "
+    
+    - name: Test scenarios directory structure
+      run: |
+        uv run python -c "
+        import os
+        import glob
+        scenario_files = glob.glob('scenarios/*.py')
+        scenario_files = [f for f in scenario_files if not f.endswith('__init__.py')]
+        print(f'[OK] Found {len(scenario_files)} scenario files')
+        assert len(scenario_files) > 10, 'Expected more than 10 scenario files'
+        
+        # Test that each scenario file can be imported
+        import sys
+        sys.path.insert(0, '.')
+        for scenario_file in scenario_files[:5]:  # Test first 5 to save time
+            module_name = os.path.basename(scenario_file)[:-3]  # Remove .py
+            try:
+                exec(f'from scenarios.{module_name} import Scenario')
+                print(f'[OK] scenarios.{module_name} imports successfully')
+            except Exception as e:
+                print(f'[FAIL] Failed to import scenarios.{module_name}: {e}')
+                raise
+        "
+    
+    - name: Test that simulations directory is created
+      run: |
+        uv run python -c "
+        import os
+        os.makedirs('scenarios/sims', exist_ok=True)
+        os.makedirs('scenarios/detailed_sims', exist_ok=True)
+        print('[OK] Simulation directories created')
+        " 

@@ -1,0 +1,46 @@
+name: Quick Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  quick-test:
+    name: Quick validation (Ubuntu + uv)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install uv
+      uses: astral-sh/setup-uv@v4
+    
+    - name: Install dependencies
+      run: uv sync
+    
+    - name: Run unit tests
+      run: uv run python -m unittest discover -s tests -v
+    
+    - name: Validate core imports
+      run: |
+        uv run python -c "
+        import sys
+        sys.path.insert(0, '.')
+        
+        # Test core functionality
+        from scripts.scenarios_config import get_all_scenarios, get_scenario
+        scenarios = get_all_scenarios()
+        print(f'[OK] Loaded {len(scenarios)} scenarios')
+        
+        # Test a basic scenario works
+        scenario = get_scenario('period', '9.6 M, 3.1 M')
+        print('[OK] Basic scenario creation works')
+        
+        # Test agent tools import
+        from agents.tools.observe_tool import observe_tool, execute_observe_tool
+        from agents.tools.python_repl_tool import python_repl_tool, execute_python_repl
+        from agents.tools.submit_answer_tool import submit_answer_tool, execute_submit_answer
+        print('[OK] Agent tools import successfully')
+        
+        print('All quick tests passed!')
+        " 

@@ -1,0 +1,24 @@
+
+\begin{table*}[!htb]
+    \centering
+    \footnotesize
+    \caption{\textbf{Analysis of Mass-Related Assumptions in Model Responses.} 
+    For each model, we analyze responses to problems that explicitly require determining stellar masses as an intermediate step or final answer (122 problems). 
+    The percentages show what fraction of each category (incorrect/correct) contained explicit mass assumptions. 
+    Mass assumptions were identified by searching for the following patterns: center-of-mass calculation ``(df['star1\_x'] + df['star2\_x'])/2'', 
+    explicit mass assignments (``star1\_mass = 1.0'', ``star2\_mass = 1.0'', ``m1 = m2'', ``m1 = 1.0'', ``m2 = 1.0''), 
+    and other variations of unit mass assumptions. All matches were manually verified. 
+    Results averaged over 3 runs with standard errors shown.}\label{tab:mass_assumptions}
+    \begin{tabular}{lcc}
+    \toprule
+    & \textbf{\% of Incorrect Solutions} & \textbf{\% of Correct Solutions} \\
+    & \textbf{that include a mass assumption} & \textbf{that include a mass assumption} \\
+    \midrule
+    gpt-4o-mini-2024-07-18 & 22.1 $\pm$ 0.6 (22/99) & 9.0 $\pm$ 2.6 (2/22) \\
+    claude-3-5-sonnet-20241022 & 24.6 $\pm$ 2.6 (23/94) & 9.8 $\pm$ 2.5 (2/27) \\
+    gpt-4o-2024-11-20 & 33.0 $\pm$ 4.8 (32/97) & 9.3 $\pm$ 2.7 (2/25) \\
+    claude-3-5-haiku-20241022 & 25.9 $\pm$ 3.6 (26/100) & 18.5 $\pm$ 2.7 (4/21) \\
+    o4-mini & 28.6 $\pm$ 6.5 (11/39) & 12.1 $\pm$ 0.5 (10/82) \\
+    \bottomrule
+    \end{tabular}
+\end{table*}

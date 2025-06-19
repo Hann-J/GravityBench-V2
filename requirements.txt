@@ -1,0 +1,29 @@
+# Core dependencies for GravityBench
+numpy>=2.2.5
+pandas>=2.2.3
+scipy>=1.15.2
+scikit-learn>=1.6.1
+statsmodels>=0.14.4
+rebound>=4.4.6
+
+# AI/ML APIs
+anthropic>=0.51.0
+openai>=1.79.0
+
+# Utilities
+python-dotenv>=1.1.0
+colorama>=0.4.6
+tqdm
+
+# Scientific computing
+astropy>=7.0.2
+
+# Visualization (optional - used in analysis)
+matplotlib>=3.10.3
+seaborn>=0.13.2
+
+# Development/testing
+ipykernel>=6.29.5
+
+# Optional for analysis
+datasets>=3.6.0 
