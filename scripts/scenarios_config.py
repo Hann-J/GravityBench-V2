@@ -102,7 +102,7 @@ class BinaryScenario:
             self.filename, prompt, final_answer_units, 
             drag_tau=self.drag_tau, 
             mod_gravity_exponent=self.mod_gravity_exponent,
-            units=self.units, face_on_projection=self.face_on_projection,
+            units=self.units, projection=self.projection,
             skip_simulation=skip_simulation
         )
     

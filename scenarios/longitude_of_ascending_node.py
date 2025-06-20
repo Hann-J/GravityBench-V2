@@ -7,9 +7,9 @@ import scripts.task_utils as task_utils
 #Angle will be zero if inclination is zero
 
 class Scenario:
-    def __init__(self, scenario_creator, face_on_projection=False, skip_simulation=False):
+    def __init__(self, scenario_creator, projection=False, skip_simulation=False):
         self.scenario_creator = scenario_creator
-        self.face_on_projection = face_on_projection
+        self.projection = projection
 
         prompt = """Determine the longitude of ascending node of the system's orbit. Take the positive x-axis as the reference direction."""
         final_answer_units = "rad"
@@ -34,7 +34,7 @@ class Scenario:
             df = df.iloc[indices].reset_index(drop=True)
 
         # If face_on_projection is False
-        if not self.face_on_projection:
+        if not self.projection:
             # If inclination is zero, the longitude of ascending node will also be zero, as described by the rebound package
             if (df['star1_z'] == 0).all() and (df['star2_z'] == 0).all():
                 empirical_long = 0
