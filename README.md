@@ -1,7 +1,7 @@
 # Gravity-Bench-V2: A Benchmark for AI Discovery of Gravitational Physics
 
 ## V2 version (Setup and Guide: Projection and Random geometry)
-Face on projection is added for realistic projection of binary orbits. It projects the xyz binary orbit onto yz plane. 
+Projection is added for realistic view of binary orbits. It projects the xyz binary orbit onto the yz plane. 
 
 Random geometry is added to test differnet x',y',z' orientation of xy binary orbits. It uses three parameters to model the orientation
 1. Inclination angle, with xy plane as reference
