@@ -20,14 +20,14 @@ class Binary():
     def __init__(self, star1_mass, star2_mass, star1_pos, star2_pos, star1_momentum, 
                  star2_momentum, maxtime, max_observations, max_observations_per_request, 
                  filename, prompt, final_answer_units, drag_tau=None, 
-                 mod_gravity_exponent=None, units=('m', 's', 'kg'), face_on_projection=False, skip_simulation=False):
+                 mod_gravity_exponent=None, units=('m', 's', 'kg'), projection=False, skip_simulation=False):
         """
         Initialize binary system with physical parameters and simulation settings
         Args:
             drag_tau: Linear drag coefficient (None = no drag)
             mod_gravity_exponent: Gravity law modification (None = Newtonian)
             units: Unit system for simulation (SI, Astronomical, or CGS)
-            face_on_projection: Projects the stars onto the yz plane (x=0). The computer is looking at the system along the positive x-axis.
+            rojection: Projects the stars onto the yz plane (x=0). The computer is looking at the system along the positive x-axis.
             skip_simulation: Load existing data instead of running new simulation
         """
         
@@ -48,7 +48,7 @@ class Binary():
         self.drag_tau = drag_tau  # Linear drag coefficient
         self.mod_gravity_exponent = mod_gravity_exponent  # Gravity law modification
         self.units = units  # Unit system tuple
-        self.face_on_projection = face_on_projection  # Projection onto the y-z plane
+        self.projection = projection  # Projection onto the yz plane
 
         # Initialize REBOUND simulation
         self.sim = rebound.Simulation()
@@ -94,7 +94,7 @@ class Binary():
         self.row_wise_prompt = ""
 
         # Prompt without face_on_projection
-        if not self.face_on_projection:
+        if not self.projection:
             self.full_table_tools_and_data_prompt = f"1. A DataFrame `df` containing columns: {', '.join(self.df.columns)}.\n2. A code interpreter with `df` pre-loaded that can execute Python code."
             self.prompt = f"""You are tasked with solving the following physics problem related to a binary star system. You are provided observations of each star's position over time, (t,x,y,z), in units of {self.units_string}.
         
@@ -383,7 +383,7 @@ When using `Observe`:
                 cs_z2 = CubicSpline(times, z2)
 
                 # Get interpolated values and check for projection onto the yz plane
-                if self.face_on_projection:
+                if self.projection:
                     self.state = np.array([time, 
                                      0, cs_y1(time), cs_z1(time),
                                      0, cs_y2(time), cs_z2(time)])

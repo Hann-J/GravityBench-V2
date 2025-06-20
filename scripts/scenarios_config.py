@@ -33,13 +33,13 @@ class BinaryScenario:
         drag_tau (float): Optional atmospheric drag timescale
         mod_gravity_exponent (float): Optional modified gravity parameter
         units (tuple): Unit system used (m/s/kg, AU/yr/Msun, or cm/s/g)
-        face_on_projection (bool): Whether to use face-on projection for visualization
+        projection (bool): Whether to use projection onto the yz plane for visualization
     """
     
     def __init__(self, variation_name, star1_mass, star2_mass, star1_pos, star2_pos, 
                  maxtime=None, num_orbits=10, ellipticity=0.0, proper_motion_direction=None, 
                  proper_motion_magnitude=0.0, drag_tau=None, mod_gravity_exponent=None, 
-                 units=('m', 's', 'kg'), face_on_projection=False):
+                 units=('m', 's', 'kg'), projection=False):
         """Initialize binary system with physical parameters and dynamic properties."""
         
         # Basic system parameters
@@ -61,7 +61,7 @@ class BinaryScenario:
         self.units = units
         
         # Observation parameters (defaults, can be overridden later)
-        self.face_on_projection = face_on_projection # Whether to visualize in face-on projection
+        self.projection = projection # Whether to visualize in face-on projection
         self.max_observations = 10  # Total observations allowed
         self.max_observations_per_request = 10  # Observations per API call
 
@@ -207,7 +207,7 @@ Msun = 1.989e30  # kg
 
 # Preconfigured scenario variations
 variations = {
-    '21.3 M, 3.1 M, FOP': BinaryScenario('21.3 M, 3.1 M, FOP', 21.3*Msun, 3.1*Msun, [-5e12, -7e12, 0], [-3e12, -8e12, 0], ellipticity=0.6, face_on_projection=True)}
+    '21.3 M, 3.1 M, PRO': BinaryScenario('21.3 M, 3.1 M, PRO', 21.3*Msun, 3.1*Msun, [-5e12, -7e12, 0], [-3e12, -8e12, 0], ellipticity=0.6, projection=True)}
 #    '9.6 M, 3.1 M': BinaryScenario('9.6 M, 3.1 M', 9.6*Msun, 3.1*Msun, [-1e12, 6e12, 1e9], [-1e12, 3e12, 6.3e9], ellipticity=0.6),
 #    '0.18 M, 0.63 M': BinaryScenario('0.18 M, 0.63 M', 0.18*Msun, 0.63*Msun, [7e11, 2e11, 7e11], [2e11, 1e11, -3e12], ellipticity=0.6),
 #    '9.6 M, 3.1 M, Proper Motion': BinaryScenario('9.6 M, 3.1 M, Proper Motion', 9.6*Msun, 3.1*Msun, [4e12, 3e12, 5e12], [2e12, 3e12, -1e12], ellipticity=0.8, proper_motion_direction=[1, 1, 0], proper_motion_magnitude=1e3),
@@ -234,6 +234,7 @@ variations = {
 #    '10.1M, 5.6 M, Modified Gravity 2.03': BinaryScenario('10.1M, 5.6 M, Modified Gravity 2.03', 10.1*Msun, 5.6*Msun, [5e10, 1e11, 3e10], [7.5e10, 3e10, -6e10], maxtime=2.3e8, ellipticity=0.8, mod_gravity_exponent=2.03),
 #    '10.1M, 5.6 M, Modified Gravity 1.97 Proper Motion': BinaryScenario('10.1M, 5.6 M, Modified Gravity 1.97 Proper Motion', 10.1*Msun, 5.6*Msun, [5e10, 1e10, 6e10], [7.5e10, 3e10, 4e9], maxtime=2.4e7, ellipticity=0.8, mod_gravity_exponent=1.97, proper_motion_direction=[1, 1, 0], proper_motion_magnitude=1e4)
 #}
+
 # Define scenarios with their variations
 #load scenarios_config.json
 with open('scripts/scenarios_config.json') as f:
@@ -281,11 +282,11 @@ def get_scenario(scenario_name, variation_name, row_wise=False,
         star1_x, star1_y, star1_z = df['star1_x'].iloc[0], df['star1_y'].iloc[0], df['star1_z'].iloc[0]
         star2_x, star2_y, star2_z = df['star2_x'].iloc[0], df['star2_y'].iloc[0], df['star2_z'].iloc[0]
         e = df['eccentricity'].iloc[0]
-        if "FOP" in variation_name:
+        if "PRO" in variation_name:
             projection = True
         scenario = scenario_module.Scenario(BinaryScenario(variation_name, star1_mass = star1_m, star2_mass=star2_m,
                                                            star1_pos=[star1_x, star1_y, star1_z], star2_pos=[star2_x, star2_y, star2_z],
-                                                           ellipticity=e, face_on_projection=projection),
+                                                           ellipticity=e, projection=projection),
                                             skip_simulation=skip_simulation) # Then run then BinaryScenario with the variation_name and the masses
 
     else:

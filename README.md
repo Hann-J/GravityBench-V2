@@ -1,20 +1,45 @@
-# Gravity-Bench: A Benchmark for AI Discovery of Gravitational Physics
+# Gravity-Bench-V2: A Benchmark for AI Discovery of Gravitational Physics
 
-[![Paper](https://img.shields.io/badge/arXiv-2501.18411-B31B1B)](https://arxiv.org/abs/2501.18411v2)
-[![Website](https://img.shields.io/badge/Website-gravitybench.github.io-blue)](https://gravitybench.github.io/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT) 
-[![Hugging Face](https://img.shields.io/badge/HuggingFace-GravityBench-orange)](https://huggingface.co/datasets/GravityBench/GravityBench)
+## V2 version (Setup and Guide: Projection and Random geometry)
+Face on projection is added for realistic projection of binary orbits. It projects the xyz binary orbit onto yz plane. 
 
-This repository contains the code and benchmark for the ICML 2025 paper: **"Gravity-Bench-v1: A Benchmark on Gravitational Physics Discovery for Agents"** (arXiv:2501.18411). Visit our project website at [gravitybench.github.io](https://gravitybench.github.io/) for discussion on the results.
+Random geometry is added to test differnet x',y',z' orientation of xy binary orbits. It uses three parameters to model the orientation
+1. Inclination angle, with xy plane as reference
+2. Longitude of ascending node, with positive x-axis as reference
+3. Argument of periapsis, with the longitude of ascending node as reference
 
-Gravity-Bench is a benchmark that evaluates AI agents on solving gravitational physics problems by providing them tools to **observe** a two-body gravitational system and **write code** to solve the problem. 
+These three parameteres give us the full range of possible orientations for the binary orbit. 
 
-Our range of tasks include difficult problems, such as determining how we modified gravity and determining the coefficient of drag that has been added to the system (problems not often seen in textbooks).
+The setup is as follows:
+1. Add variations to scripts/scenarios_config.json and include "PRO" at the end of variation name for projection. E.x. "21.3 M, 3.1 M, PRO.csv" The PRO is essential for the code to recognise it is a projection.
 
-These questions challenge AI agents with skills that mirror real-world science, including iterative reasoning, planning, and generalization.
+2. Setup variations in scripts/scenarios_config.py and include extra parameter "projection=True" for projection.
 
-![Flowchart](analysis/plots/flowchart5.png)
+```bash
+# Preconfigured scenario variations
+variations = {
+    '21.3 M, 3.1 M, PRO': BinaryScenario('21.3 M, 3.1 M, FOP', 21.3*Msun, 3.1*Msun, [-5e12, -7e12, 0], [-3e12, -8e12, 0], ellipticity=0.6, projection=True)}
+```
 
+3. Run scenario with additional parameter --random-geometry 5, which creates 5 random geometry transformation of the original variations.
+
+    ```bash
+    python scripts/run_agent.py --simulate-all --model gpt-4o-mini-2024-07-18 --row-wise --random-geoometry 5
+    ```
+
+    Note: The random variations will be shared across scenarios with the same variation name, so that it can be tested for coherency with different problem.
+
+4. Explore results as normal, and you can run the "Reproducing Paper Results" section located below as well.
+
+5. After completing the results, run reset_variations() to reset back to original variations for the next setup.
+
+    ```bash
+    python scripts/geometry_config.py reset_variations()
+    ```
+
+The code works by generating csv files with random orientations to scenarios/detailed_sims and scenarios/sims. It also updates these variations onto the scenarios_config.json for scenarios to run on these variations. After completing the run and results, remove_variations() will remove the randomly transformed variations files and leave back with the original variations for the next run.
+
+Most functions for random geometry are contained in scripts/geometry_config.py
 
 ## Key Features
 
@@ -40,6 +65,7 @@ These questions challenge AI agents with skills that mirror real-world science, 
         - Warning: The Python REPL tool executes arbitrary code without containerization and should be used with caution.
     -   A `submit_answer` tool for providing the final numeric or boolean answer (`agents/tools/submit_answer_tool.py`).
     This agent is executed using `scripts/run_agent.py` or `scripts/run_agent_range_of_budgets.py` (for varying observation budgets). The agent prompts are detailed in Appendix D of our paper.
+
 
 ## Getting Started
 
@@ -107,6 +133,7 @@ These questions challenge AI agents with skills that mirror real-world science, 
     After each run, navigate to the `outputs/` (or `outputs_range_of_N/`) directory. Inside the run-specific subfolder (e.g., `outputs/gpt-4o_<timestamp>/`), you will find:
     -   A `<model>_<timestamp>.json` file containing detailed run data.
     -   A `<model>_<timestamp>.html` file, which is an interactive report. Open this in your browser to see a summary and step-by-step logs for each scenario attempt.
+
 
 ## Running your own models and agents
 

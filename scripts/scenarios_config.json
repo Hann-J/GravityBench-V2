@@ -201,7 +201,7 @@
     },
     "angle_of_inclination": {
         "variations": [
-            "21.3 M, 3.1 M, FOP"
+            "21.3 M, 3.1 M, PRO"
         ],
         "correct_threshold_percentage_based_on_100_observations": 5
     },
