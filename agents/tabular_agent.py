@@ -89,7 +89,7 @@ class Agent:
             })
             self.exploration_prompt = self.environment.binary_sim.row_wise_prompt
         else:
-            if "FOP" in variation_name:
+            if "PRO" in variation_name:
                 self.df = copy.deepcopy(self.df)
                 self.df['star1_z'] = 0.0
                 self.df['star2_z'] = 0.0
