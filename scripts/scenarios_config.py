@@ -288,11 +288,6 @@ def get_scenario(scenario_name, variation_name, row_wise=False,
                                                            ellipticity=e, face_on_projection=projection),
                                             skip_simulation=skip_simulation) # Then run then BinaryScenario with the variation_name and the masses
 
-        # Or other method to split the variation_name
-        #star1_mass, star2_mass = variation_name[:-31].split(',') # Splits the randomly transformed variation to original variation name, and split them to get their masses
-        #mass1 = float(star1_mass.strip().replace(' M', ''))
-        #mass2 = float(star2_mass.strip().replace(' M', ''))
-        #scenario = scenario_module.Scenario(BinaryScenario(variation_name, )) # Then run then BinaryScenario with the variation_name and the masses
     else:
         scenario = scenario_module.Scenario(
             variations[variation_name], 
@@ -313,9 +308,3 @@ def get_scenario_test_new_variation(scenario_name, new_variation, scenario_folde
         f"{scenario_folder}.{scenario_name}"
     ).Scenario(new_variation)
 
-#for variation in variations.values():
-    variation.create_binary(
-        "Test scenario creation",
-        "('m', 's', 'kg')",
-        skip_simulation=False
-    )

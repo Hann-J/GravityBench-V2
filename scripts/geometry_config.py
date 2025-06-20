@@ -1,10 +1,11 @@
 
 """
-This script contains a function to randomly transform the geometry of a binary system from an xy orientation to an xyz orientation.
+This script contains mainly functions for the GravityBench extension, particularly the random_geoemtry and variation_reset functions.
 
-The function writes to two CSV files, one to scenarios/detailed_sims and one to scenarios/sims. A rebound simulation is run with the new geometry,
-and the results are saved compared to the original tranformed DataFrame. However, their differences differ by a very small amount, that cascades a larger amount as 
-time passes. Nonetheless, the differences are usually small enough to be negligible, but the rebound simulation data is used as a baseline for more accuracy.
+The function writes to two CSV files, one to scenarios/detailed_sims and one to scenarios/sims with random orientations. The random orientation is constructed 
+through inclination, longitude of ascending node, and argument of periapsis. A rebound simulation is run with these parameters for more accuracy. The original
+transformation function works accurate for the start but the difference between rebound and transformed data increases as time increases. The differences are 
+usually insignificant in terms of orders of magnitude.
 """
 
 import numpy as np
@@ -20,26 +21,28 @@ def random_geometry(df, file_name:str, verification=False):
     Randomly transform the geometry of the binary system from a xy orientation to an xyz orientation. This is done in four steps:
     1. Randomly translate the binary system x,y,z. The range of translation is restricted between (-COM, COM) in each perpendicular direction, 
     where COM is the center of mass of the binary system.
-    2. Randomly rotate the binary system about the x-axis by a random inclination angle.
-    3. Randomly rotate the binary system about the z-axis by a random longitude of ascending node angle.
-    4. Randomly rotate the binary system about the normal axis of the orbital plane by a random periapsis angle.
+    2. Randomly rotate the binary system about the y-axis of the COM by a random inclination angle.
+    3. Randomly rotate the binary system about the z-axis of the COM by a random longitude of ascending node.
+    4. Randomly rotate the binary system about the normal axis of the orbital plane by a random argumet of periapsis.
 
     Parameters:
     -----------
     df : pandas.DataFrame
-       DataFrame containing simulation data with position and time columns (detailed_sims)
-    file_name : ostr
-        Simulation object containing initial conditions
+        DataFrame containing simulation data with position and time columns (detailed_sims)
+    file_name : str
+        Name of the original variation
     verification : bool, optional
-        Whether to verify results (default True)
+        Whether to verify results (default False)
 
     Returns:
     --------
     str
-        The name of the file containing the transformed geometry.
+        The name of the file containing the transformed geometry. 
+        It is named as follows {file_name}_Inc_{inclination_angle}_Long_{longitude of ascending node}_Arg_{argument of periapsis}
     """
 
-    df = df.copy(deep=True)  # Ensure we don't modify the original DataFrame
+    # Ensure we don't modify the original variation
+    df = df.copy(deep=True)
 
     # Find the center of mass of the binary system
     # Get masses for COM calculation
@@ -55,7 +58,7 @@ def random_geometry(df, file_name:str, verification=False):
     COMy = df['COMy'].mean()
     COMz = df['COMz'].mean()
 
-    # Random translation in x, y, z with range from 
+    # Random translation in x, y, z with range from (-COM, COM)
     translation_x = np.random.uniform(-COMx, COMx)
     translation_y = np.random.uniform(-COMy, COMy)
     translation_z = np.random.uniform(-COMz, COMz)
@@ -72,29 +75,17 @@ def random_geometry(df, file_name:str, verification=False):
     df['COMz'] += translation_z
         
 
-    # Random inclination about the xy plane, longitude of ascending node about positive x-axis, and argument of pericenter within the orbital plane
+    # Random inclination about the xy plane, longitude of ascending node about positive x-axis, and argument of periapsis
     inclination = np.random.uniform(0, np.pi)  # Random inclination between 0 and pi
     longitude_of_ascending_node = np.random.uniform(-np.pi, np.pi)  # Random longitude of ascending node between -pi and pi, with positive x-axis as reference
-    argument_of_periapsis = np.random.uniform(0, 2*np.pi) # Random argument of periapsis between -pi and pi
+    argument_of_periapsis = np.random.uniform(0, 2*np.pi) # Random argument of periapsis between 0 and 2pi
 
     # Update the geometry inclination, longitude of ascending node, and argument of periapsis in the DataFrame
     df['inclination'] = inclination
     df['longitude_of_ascending_node'] = longitude_of_ascending_node
     df['argument_of_periapsis'] = argument_of_periapsis
 
-    new_geometry = f"New geometry, (x,y,z) translation: {translation_x, translation_y, translation_z}, inclination: {inclination}, longitude of ascending node: {longitude_of_ascending_node}, argument of periapsis: {argument_of_periapsis}"
-
     # Apply random inclination using Rodrigues' rotation matrix
-    rel_star1 = np.stack([
-        df['star1_x'] - df['COMx'],
-        df['star1_y'] - df['COMy'],
-        df['star1_z'] - df['COMz']], axis = 1)  # Relative position of star1 from COM (Shape: (N, 3))
-    
-    rel_star2 = np.stack([
-        df['star2_x'] - df['COMx'],
-        df['star2_y'] - df['COMy'],
-        df['star2_z'] - df['COMz']], axis = 1)  # Relative position of star2 from COM (Shape: (N, 3))
-    
     # Specific angular momentum vector
     r_rel = np.stack([
         df['star2_x'] - df['star1_x'],
@@ -111,10 +102,22 @@ def random_geometry(df, file_name:str, verification=False):
     h_vec = np.cross(r_rel, v_rel)  # Specific angular momentum vector (Shape: (N, 3))
     h_avg = h_vec.mean(axis=0)  # shape: (3,)
 
+    # If specific angular momentum points in the -z direction, rotate it by pi
     if h_avg[2] < 0:
-        R = rotate_about_axis([0, 1, 0], inclination + np.pi)  # Rotate about x-axis by inclination angle
+        R = rotate_about_axis([0, 1, 0], inclination + np.pi)
     else:
         R = rotate_about_axis([0, 1, 0], inclination)   
+
+    # Apply Rodrigues' rotation formula to the star position with random inclination
+    rel_star1 = np.stack([
+        df['star1_x'] - df['COMx'],
+        df['star1_y'] - df['COMy'],
+        df['star1_z'] - df['COMz']], axis = 1)  # Relative position of star1 from COM (Shape: (N, 3))
+
+    rel_star2 = np.stack([
+        df['star2_x'] - df['COMx'],
+        df['star2_y'] - df['COMy'],
+        df['star2_z'] - df['COMz']], axis = 1)  # Relative position of star2 from COM (Shape: (N, 3))
 
     rotated_rel_star1 = rel_star1 @ R.T # Rotated relative position of star1 (Shape: (3, N))
     rotated_rel_star2 = rel_star2 @ R.T # Rotated relative position of star2 (Shape: (3, N))
@@ -126,7 +129,7 @@ def random_geometry(df, file_name:str, verification=False):
     df['star2_y'] = rotated_rel_star2[:, 1] + df['COMy']
     df['star2_z'] = rotated_rel_star2[:, 2] + df['COMz']
 
-    # Apply Rodrigues' rotation formula for the star velocities with inclination
+    # Apply Rodrigues' rotation formula to the star velocities with random inclination
     vel_star1 = np.stack([
         df['star1_vx'],
         df['star1_vy'],
@@ -168,6 +171,7 @@ def random_geometry(df, file_name:str, verification=False):
     h_avg = h_vec.mean(axis=0)
     h_unit = h_avg / np.linalg.norm(h_avg)  # Normalize the specific angular momentum vector
 
+    # Since we rotated about the y-axis of the COM, there are only two cases where the longitude of ascending node will be
     if h_avg[0] < 0:
         current_longitude_of_ascending_node = -(1/2) * np.pi  # If h_vec is positive, longitude of ascending node is -1/2 pi
     elif h_avg[0] > 0:
@@ -175,8 +179,9 @@ def random_geometry(df, file_name:str, verification=False):
     else:
         current_longitude_of_ascending_node = 0
 
-    R = rotate_about_axis([0, 0, 1], longitude_of_ascending_node - current_longitude_of_ascending_node)  # Rotate about z-axis of COM of the binary system
+    R = rotate_about_axis([0, 0, 1], longitude_of_ascending_node - current_longitude_of_ascending_node)  # Rotate about z-axis of the COM of the binary system
     
+    # Apply Rodrigues' rotation formula to the star position with random longitude of ascending node
     rel_star1 = np.stack([
         df['star1_x'] - df['COMx'],
         df['star1_y'] - df['COMy'],
@@ -256,7 +261,8 @@ def random_geometry(df, file_name:str, verification=False):
         current_argument_of_periapsis = 2 * np.pi - current_argument_of_periapsis
 
     R = rotate_about_axis(h_unit, argument_of_periapsis - current_argument_of_periapsis) # Rotational matrix about the normal axis of the orbital plane
-    
+
+    # Apply Rodrigues' rotation formula to the star position with random argument of periapsis
     rel_star1 = np.stack([
         df['star1_x'] - df['COMx'],
         df['star1_y'] - df['COMy'],
@@ -301,7 +307,7 @@ def random_geometry(df, file_name:str, verification=False):
     df['star2_vz'] = rotated_vel_star2[:, 2]
     
     
-    # Rebound verification
+    # Rebound setup and verification
     sim = rebound.Simulation()
     sim.units = ('m', 's', 'kg')  # Set units to SI units
     
@@ -314,7 +320,7 @@ def random_geometry(df, file_name:str, verification=False):
     # Record the simulation data
     rows = []
     time_passed = 0 # Start time of the simulation
-    dt = df['time'].iloc[1] - df['time'].iloc[0]  # Time difference from the start of the simulation
+    dt = df['time'].iloc[1] - df['time'].iloc[0]  # Timestep for simulation
     while time_passed <= df['time'].iloc[-1]:
         sim.integrate(time_passed)  # Integrate the simulation to the current time
         time_passed += dt # Update the time
@@ -337,7 +343,8 @@ def random_geometry(df, file_name:str, verification=False):
                     orbit.inc, orbit.Omega, orbit.omega, orbit.f, orbit.M, orbit.T, orbit.d
                 ]
         rows.append(detailed_row)
-        
+
+    # Convert to a pandas series
     sim_df = pd.DataFrame(rows, columns=[
                 'time', 'star1_x', 'star1_y', 'star1_z', 'star2_x', 'star2_y', 'star2_z',
                 'star1_vx', 'star1_vy', 'star1_vz', 'star2_vx', 'star2_vy', 'star2_vz', 
@@ -347,15 +354,7 @@ def random_geometry(df, file_name:str, verification=False):
                 'time_of_pericenter_passage', 'radial_distance_from_reference'
             ])
 
-# Testing the transformation    
-#    sim_df = sim_df[['time', 'star1_x', 'star1_y', 'star1_z', 'star2_x', 'star2_y', 'star2_z', 'inclination',
-#                     'longitude_of_ascending_node', 'argument_of_periapsis']]
-
-# Manually transformed DataFrame        
-#    csv_file_detailed = f"scenarios/detailed_sims/{file_name}_Inc_{inclination:.3f}_Long_{longitude_of_ascending_node:.3f}_Arg_{argument_of_periapsis:.3f}.csv"
-#    with open(csv_file_detailed, mode='w', newline='') as file_detailed:
-#        df.to_csv(file_detailed, index=False)
-
+    # Write to new files
     csv_file_detailed_sims = f"scenarios/detailed_sims/{file_name}_Inc_{inclination:.3f}_Long_{longitude_of_ascending_node:.3f}_Arg_{argument_of_periapsis:.3f}.csv"
     with open(csv_file_detailed_sims, mode='w', newline='') as file_detailed_actual:
         sim_df.to_csv(file_detailed_actual, index=False)
@@ -380,9 +379,9 @@ def random_geometry(df, file_name:str, verification=False):
     return f"{file_name}_Inc_{inclination:.3f}_Long_{longitude_of_ascending_node:.3f}_Arg_{argument_of_periapsis:.3f}"
 
 # Remove the randomly transformed variations
-def remove_variations():
+def reset_variations():
     folder_path_detailed = "scenarios/detailed_sims"
-    file_names = os.listdir(folder_path_detailed)
+    file_names = os.listdir(folder_path_detailed) # Same name for both sims and detailed_sims
     for file in file_names:
         if "Inc" in file:
             file_path_detailed = f"scenarios/detailed_sims/{file}"
@@ -456,4 +455,4 @@ def rotate_about_axis(axis, theta):
 
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "remove_variations":
-        remove_variations()
+        reset_variations()
