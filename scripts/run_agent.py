@@ -385,8 +385,7 @@ def main(row_wise, simulate_all=False, scenario_filenames=None, max_observations
         for scenario_name, scenario_set_ups in base_scenarios.items():
             for variation_name in scenario_set_ups['variations']: # Every possible variations has been transformed, so no need to check for other variations
                 scenarios_to_run[scenario_name]['variations'].extend(variations_set[variation_name])
-        
-        print("Random geometrical setup completed!")
+
         
 
     # Parallel execution setup
@@ -450,18 +449,6 @@ def main(row_wise, simulate_all=False, scenario_filenames=None, max_observations
     with open(json_path, 'w') as f:
         json.dump(scenarios_to_run, f, indent=4)
 
-    # Delete random geometry files for next run, use the variations_set dictionary from before to remove all randomly transformed variations
-#    if random_geometry != 0:
-#        for variation_list in variations_set.values(): # .values() return a lists of all the new variation names that is randomly transformed from an original variation
-#            for variation in variation_list:
-#                file_path_detailed = f"scenarios/detailed_sims/{variation}.csv"
-#                file_path_sims = f"scenarios/sims/{variation}.csv"
-#                if os.path.exists(file_path_detailed):
-#                    os.remove(file_path_detailed)
-#                if os.path.exists(file_path_sims):
-#                    os.remove(file_path_sims)
-#        print("INTERNAL: Random variation files has been deleted")
-#
     return all_results
 
 def run_agent_on_scenario_star(args):
@@ -520,7 +507,7 @@ if __name__ == "__main__":
     parser.add_argument('--max-observations-total', type=int, default=100,
                        help='Total observation budget for row-wise mode')
     parser.add_argument('--random-geometry', type=int, default=0,
-                        help='The number of random geometry transformation for each variation, default is set to 0 and 0 will not run this version')
+                        help='The number of random geometry transformation for each variation, default is set to 0, and 0 will not run this version')
     
     # Model selection
     parser.add_argument('--model', type=str, default='gpt-4o-mini',

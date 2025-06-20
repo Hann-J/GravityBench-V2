@@ -87,9 +87,9 @@ def save_run_output(run_results, output_dir):
 
 import threading
 
-def agent_run_target(queue, scenario, row_wise, model, max_observations_per_request=10, max_observations_total=10):
+def agent_run_target(queue, scenario, variation_name, row_wise, model, max_observations_per_request=10, max_observations_total=10):
     try:
-        agent = TabularAgent.Agent(scenario, model=model, row_wise=row_wise, 
+        agent = TabularAgent.Agent(scenario, variation_name=variation_name, model=model, row_wise=row_wise, 
                                    max_observations_per_request=max_observations_per_request,
                                    max_observations_total=max_observations_total)
         result, json_chat_history = agent.run(verbose=True)
@@ -97,10 +97,10 @@ def agent_run_target(queue, scenario, row_wise, model, max_observations_per_requ
     except Exception as e:
         queue.put(e)
 
-def run_agent_with_timeout(scenario, row_wise, model, timeout, max_observations_per_request=10, max_observations_total=10):
+def run_agent_with_timeout(scenario, variation_name, row_wise, model, timeout, max_observations_per_request=10, max_observations_total=10):
     queue = multiprocessing.Queue()
     thread = threading.Thread(target=agent_run_target, 
-                              args=(queue, scenario, row_wise, model, max_observations_per_request, max_observations_total))
+                              args=(queue, scenario, variation_name, row_wise, model, max_observations_per_request, max_observations_total))
     thread.start()
     thread.join(timeout)
 
@@ -122,6 +122,7 @@ def run_agent_on_scenario(row_wise, scenario, scenario_name, variation_name, mod
     row_wise (bool): Agent must observe row by row or given full csv
     scenario_module (module): The scenario module to run the agent on.
     scenario_name (str): The name or label of the scenario.
+    variation_name (str): Variation name.
     max_observations_total (int): Maximum total number of observations allowed (only used if row_wise is True).
     max_observations_per_request (int): Maximum number of observations per request (only used if row_wise is True).
     timeout (int): Maximum time allowed for the agent to run (in seconds).
@@ -138,7 +139,7 @@ def run_agent_on_scenario(row_wise, scenario, scenario_name, variation_name, mod
         error_message = None
         try:
             start_time = time.time()
-            result, json_chat_history = run_agent_with_timeout(scenario, row_wise, model, timeout, 
+            result, json_chat_history = run_agent_with_timeout(scenario, variation_name, row_wise, model, timeout, 
                                                                max_observations_per_request, max_observations_total)
             error_message = json_chat_history['error_message']
             end_time = time.time()
@@ -297,6 +298,15 @@ def main(simulate_all=False, scenario_filenames=None, model='gpt-3.5-turbo', par
         transformed_variations = set() # Keep track of transformed variations so that it can be used for other scenarios, ensure uniqueness
         base_scenarios = copy.deepcopy(scenarios_to_run)
 
+    # Random geometry handling
+    if random_geometry == 0:
+        pass # No random geometry, proceed normally
+    else:
+        print("INTERNAL: Random geometry enabled. Duplicating files for different geometrical variations.")
+        variations_set = {}
+        transformed_variations = set() # Keep track of transformed variations so that it can be used for other scenarios, ensure uniqueness
+        base_scenarios = copy.deepcopy(scenarios_to_run)
+
         # Loop over the variations to find all unique variations
         for scenario_name, scenario_set_ups in scenarios_to_run.items():
             for variation_name in scenario_set_ups['variations']:
@@ -314,6 +324,7 @@ def main(simulate_all=False, scenario_filenames=None, model='gpt-3.5-turbo', par
         for scenario_name, scenario_set_ups in base_scenarios.items():
             for variation_name in scenario_set_ups['variations']: # Every possible variations has been transformed, so no need to check for other variations
                 scenarios_to_run[scenario_name]['variations'].extend(variations_set[variation_name])
+
         
     if parallel:
         tasks = []
@@ -372,17 +383,12 @@ def main(simulate_all=False, scenario_filenames=None, model='gpt-3.5-turbo', par
                     all_results.extend(run_results)
                 save_run_output(all_results, output_dir)
     
-    # Delete random geometry files for next run, use the variations_set dictionary from before to remove all randomly transformed variations
-#    if random_geometry != 0:
-#        for variation_list in variations_set.values(): # .values() return a lists of all the new variation names that is randomly transformed from an original variation
-#            for variation in variation_list:
-#                file_path_detailed = f"scenarios/detailed_sims/{variation}.csv"
-#                file_path_sims = f"scenarios/sims/{variation}.csv"
-#                if os.path.exists(file_path_detailed):
-#                    os.remove(file_path_detailed)
-#                if os.path.exists(file_path_sims):
-#                    os.remove(file_path_sims)
-#        print("INTERNAL: Random variation files has been deleted")
+    # Update json file
+    json_path = "scripts/scenarios_config.json"
+
+    # Write updated data back to the json file
+    with open(json_path, 'w') as f:
+        json.dump(scenarios_to_run, f, indent=4)
 
     return all_results
 
@@ -441,7 +447,7 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         '--random-geometry', type=int, default=0,
-        help='The number of random geometry transformation for each variation, default is set to 0 and 0 will not run this version')
+        help='The number of random geometry transformation for each variation, default is set to 0, and 0 will not run this version')
 
     args = parser.parse_args()
 
