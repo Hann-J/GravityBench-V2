@@ -13,12 +13,12 @@ These three parameteres give us the full range of possible orientations for the 
 The setup is as follows:
 1. Add variations to scripts/scenarios_config.json and include "PRO" at the end of variation name for projection. E.x. "21.3 M, 3.1 M, PRO.csv" The PRO is essential for the code to recognise it is a projection.
 
-2. Setup variations in scripts/scenarios_config.py and include extra parameter "projection=True" for projection.
+2. Setup variations in scripts/scenarios_config.py and include extra parameter "projection=True" for projection. Be sure to make sure that z-component are 0.
 
 ```bash
 # Preconfigured scenario variations
 variations = {
-    '21.3 M, 3.1 M, PRO': BinaryScenario('21.3 M, 3.1 M, FOP', 21.3*Msun, 3.1*Msun, [-5e12, -7e12, 0], [-3e12, -8e12, 0], ellipticity=0.6, projection=True)}
+    '21.3 M, 3.1 M, PRO': BinaryScenario('21.3 M, 3.1 M, PRO', 21.3*Msun, 3.1*Msun, [-5e12, -7e12, 0], [-3e12, -8e12, 0], ellipticity=0.6, projection=True)}
 ```
 
 3. Run scenario with additional parameter --random-geometry 5, which creates 5 random geometry transformation of the original variations.
